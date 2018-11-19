@@ -290,7 +290,7 @@ void NTPClient::onNtpConnected() {
     _originTimestampByte = requestPackage.requestLocalTimestampByte;
 
     _udpsocket->flush();
-    _udpsocket->write(bytesToSend);
+    _udpsocket->write(bytesToSend, 48);
     _udpsocket->flush();
 }
 void NTPClient::onNtpError(QAbstractSocket::SocketError error) {
