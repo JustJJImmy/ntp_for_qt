@@ -8,11 +8,11 @@ namespace {
 #define CURRENT_NTP_MILLION_SECOND  (MS_JAN_1970 + QDateTime::currentMSecsSinceEpoch())
 
 //#define MAX_FAILED_TIMES        3
-#define UDP_TIMEOUT             4000
+#define UDP_TIMEOUT             30000
 
 #define UDP_RESEND_INTERVAL_COUNT     6
 const qint32 gDelayResendIntervals[UDP_RESEND_INTERVAL_COUNT]
-    = {200, 500, 800, 1000, 1200, 1500};
+    = {2000, 5000, 10000, 15000, 20000, 30000};
 }
 
 quint32 byteToUInt32(QByteArray bt) {
@@ -218,6 +218,14 @@ void NTPClient::_releaseSocket() {
         _udpsocket->close();
         _udpsocket->deleteLater();
         _udpsocket = nullptr;
+    }
+    if (_socketTimerID != 0) {
+        killTimer(_socketTimerID);
+        _socketTimerID = 0;
+    }
+    if (_delayResnedTimerID != 0) {
+        killTimer(_delayResnedTimerID);
+        _delayResnedTimerID = 0;
     }
 }
 

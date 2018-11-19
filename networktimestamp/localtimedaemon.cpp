@@ -3,7 +3,9 @@
 #include <QtCore>
 
 
-#define daemon_interval  1000
+#define daemon_sleep        60000
+#define daemon_interval     1000
+#define daemon_precision    1000
 
 
 LocalTimeDaemonThread::LocalTimeDaemonThread(QObject *parent)
@@ -16,18 +18,27 @@ LocalTimeDaemonThread::LocalTimeDaemonThread(QObject *parent)
 void LocalTimeDaemonThread::run() {
     _predictTimestamp = 0;
 
+    bool isSleep = false;
+
     while (!isInterruptionRequested()) {
-        _predictTimestamp += daemon_interval;
         qint64 currentTS = QDateTime::currentMSecsSinceEpoch();
         qint64 offset = currentTS - _predictTimestamp;
-        if (offset < -500 || offset > 500) {
+        if (offset < -daemon_precision || offset > daemon_precision) {
             _predictTimestamp = currentTS;
+            isSleep = true;
             // 不符合预期，说明时间戳不准了，重新同步
             emit localtimeChanged();
         }
 
-        // sleep 的方式其实不算特别准，因为上面那些代码的执行需要时间。定时器是最准的
-        msleep(daemon_interval);
+        if (isSleep) {
+            // 如果进行 ntp 同步，则 休眠 60s 再进行下次检测
+            msleep(daemon_sleep);
+            _predictTimestamp += daemon_sleep;
+        } else {
+            msleep(daemon_interval);
+            _predictTimestamp += daemon_interval;
+        }
+        isSleep = false;
     }
 }
 
